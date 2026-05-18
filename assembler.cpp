@@ -257,6 +257,7 @@ int montar(const string &arquivo) {
             for (int pendencia : tabelaSimbolos[linhaParseada.rotulo].pendencias) {
                 codigoObj[pendencia] = posicaoAtual;
             }
+
         }
 
         if (linhaParseada.opcode.empty()) continue; // linha só tem rótulo
@@ -283,7 +284,6 @@ int montar(const string &arquivo) {
             default:
                 codigoObj.push_back(opcode);
                 codigoPen.push_back(opcode);
-
                 
                 codigoObj.push_back(checaOperando(linhaParseada.operands[0], tabelaSimbolos, codigoObj.size()));
                 codigoPen.push_back(codigoObj.back());

@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
         preprocessar(arquivo);
 
         cout << "== MONTANDO ==" << endl;
-        montar(arquivo);
+        montar(arquivo.substr(0, arquivo.find_last_of('.')) + ".pre");
 
     } 
     else if (ext == "pre") {
