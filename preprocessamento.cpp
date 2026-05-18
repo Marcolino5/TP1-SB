@@ -1,8 +1,9 @@
-#include "preprocessamento.hpp"   
+#include "preprocessamento.hpp"
 #include <fstream>
 #include <iostream>
 #include <cctype>
 #include <cstdio>
+#include <map>
 
 using namespace std;
 
@@ -34,30 +35,23 @@ string normalizarTexto(const string &linha) {
         if (isspace(ch)) {
 
             if (!saida.empty() && !ultimoEspaco) {
-
                 saida += ' ';
                 ultimoEspaco = true;
             }
 
         } else {
-
             saida += ch;
             ultimoEspaco = false;
         }
     }
 
-    // remove espaços finais
     while (!saida.empty() && saida.back() == ' ')
         saida.pop_back();
 
     return saida;
 }
 
-// processa diretiva EQU e salva na tabela de símbolos
-bool processarEqu(
-    const string &linha,
-    map<string, string> &tabelaEqu
-) {
+bool processarEqu(const string &linha, map<string, string> &tabelaEqu) {
 
     size_t doisPontos = linha.find(':');
 
@@ -65,7 +59,6 @@ bool processarEqu(
         return false;
 
     string rotulo = linha.substr(0, doisPontos);
-
     string resto = linha.substr(doisPontos + 1);
 
     while (!resto.empty() && resto[0] == ' ')
@@ -91,11 +84,7 @@ bool processarEqu(
     return true;
 }
 
-// substitui ocorrências de EQU respeitando limites de identificadores
-string substituirEqu(
-    string linha,
-    const map<string, string> &tabelaEqu
-) {
+string substituirEqu(string linha, const map<string, string> &tabelaEqu) {
 
     for (const auto &par : tabelaEqu) {
 
@@ -108,8 +97,7 @@ string substituirEqu(
 
             bool primeiro =
                 (pos == 0) ||
-                (!isalnum(linha[pos - 1]) &&
-                 linha[pos - 1] != '_');
+                (!isalnum(linha[pos - 1]) && linha[pos - 1] != '_');
 
             bool segundo =
                 (pos + rotulo.size() >= linha.size()) ||
@@ -117,13 +105,9 @@ string substituirEqu(
                  linha[pos + rotulo.size()] != '_');
 
             if (primeiro && segundo) {
-
                 linha.replace(pos, rotulo.size(), valor);
-
                 pos += valor.size();
-
             } else {
-
                 pos += rotulo.size();
             }
         }
@@ -132,11 +116,7 @@ string substituirEqu(
     return linha;
 }
 
-// avalia diretiva condicional IF (se símbolo == 0, próxima linha é ignorada)
-bool processarIf(
-    const string &linha,
-    const map<string, string> &tabelaEqu
-) {
+bool processarIf(const string &linha, const map<string, string> &tabelaEqu) {
 
     if (linha.find("IF ") != 0)
         return true;
@@ -154,7 +134,6 @@ bool processarIf(
     return (it->second != "0");
 }
 
-// normaliza constante numérica após CONST
 string processarConstante(const string &linha) {
 
     size_t pos = linha.find("CONST");
@@ -163,7 +142,6 @@ string processarConstante(const string &linha) {
         return linha;
 
     string antes = linha.substr(0, pos);
-
     string depois = linha.substr(pos + 5);
 
     while (!depois.empty() && depois[0] == ' ')
@@ -171,19 +149,15 @@ string processarConstante(const string &linha) {
 
     size_t espaco = depois.find(' ');
 
-    string valor;
-
-    if (espaco == string::npos)
-        valor = depois;
-    else
-        valor = depois.substr(0, espaco);
+    string valor = (espaco == string::npos)
+        ? depois
+        : depois.substr(0, espaco);
 
     long numero = stol(valor, nullptr, 0);
 
     return antes + "CONST " + to_string(numero);
 }
 
-// garante formato correto da instrução COPY (operandos separados por vírgula)
 string processarCopy(const string &linha) {
 
     size_t pos = linha.find("COPY");
@@ -211,6 +185,7 @@ string processarCopy(const string &linha) {
 
     while (!op1.empty() && op1[0] == ' ')
         op1.erase(0, 1);
+
     while (!op1.empty() && op1.back() == ' ')
         op1.pop_back();
 
@@ -220,24 +195,16 @@ string processarCopy(const string &linha) {
     return antes + "COPY " + op1 + "," + op2;
 }
 
-// reorganiza linha separando label, opcode e operandos
-string processarLinha(
-    const string &linha,
-    string &rotuloPendente
-) {
+string processarLinha(string linha, string &rotuloPendente) {
 
-    string rotulo;
-    string opcode;
-    string operando;
+    string rotulo, opcode, operando;
 
     size_t doisPontos = linha.find(':');
-
     string resto = linha;
 
     if (doisPontos != string::npos) {
 
         rotulo = linha.substr(0, doisPontos);
-
         resto = linha.substr(doisPontos + 1);
 
         while (!resto.empty() && resto[0] == ' ')
@@ -246,30 +213,22 @@ string processarLinha(
 
     size_t espaco = resto.find(' ');
 
-    if (espaco == string::npos) {
-
+    if (espaco == string::npos)
         opcode = resto;
-
-    } else {
-
+    else {
         opcode = resto.substr(0, espaco);
-
         operando = resto.substr(espaco + 1);
     }
 
     if (!rotulo.empty() && opcode.empty()) {
-
         rotuloPendente = rotulo + ":";
-
         return "";
     }
 
     string resultado;
 
     if (!rotuloPendente.empty()) {
-
         resultado += rotuloPendente + " ";
-
         rotuloPendente.clear();
     }
 
@@ -284,54 +243,40 @@ string processarLinha(
     return resultado;
 }
 
-// valida linha não vazia
 bool validarLinha(const string &linha) {
-
-    if (linha.empty())
-        return false;
-
-    return true;
+    return !linha.empty();
 }
 
-int main() {
+void preprocessar(const string &entrada) {
 
-    ifstream arquivoEntrada("myfile.asm");
-
-    ofstream arquivoSaida("myfile.pre");
+    ifstream arquivoEntrada(entrada);
+    string saida = entrada.substr(0, entrada.find_last_of('.')) + ".pre";
+    ofstream arquivoSaida(saida);
 
     if (!arquivoEntrada.is_open()) {
-
-        cerr << "Erro ao abrir entrada.asm\n";
-
-        return 1;
+        cerr << "Erro ao abrir " << entrada << endl;
+        return;
     }
 
     if (!arquivoSaida.is_open()) {
-
-        cerr << "Erro ao criar myfile.pre\n";
-
-        return 1;
+        cerr << "Erro ao criar o arquivo preprocessado\n";
+        return;
     }
 
     map<string, string> tabelaEqu;
 
-    string linha;
-
-    string rotuloPendente;
+    string linha, rotuloPendente;
 
     bool primeiro = true;
     bool erro = false;
-
     bool pularProximaLinha = false;
 
     int numeroLinha = 0;
 
     string secoesData;
-
     bool dados = false;
 
     arquivoSaida << "SECTION TEXT";
-
     primeiro = false;
 
     while (getline(arquivoEntrada, linha)) {
@@ -339,16 +284,13 @@ int main() {
         numeroLinha++;
 
         linha = removerComentario(linha);
-
         linha = normalizarTexto(linha);
 
         if (linha.empty())
             continue;
 
         if (pularProximaLinha) {
-
             pularProximaLinha = false;
-
             continue;
         }
 
@@ -368,33 +310,24 @@ int main() {
         linha = substituirEqu(linha, tabelaEqu);
 
         if (linha == "SECTION DATA") {
-
             dados = true;
-
             continue;
         }
 
         if (linha == "SECTION TEXT") {
-
             dados = false;
-
             continue;
         }
 
         if (dados) {
 
-            string processado =
-                processarLinha(linha, rotuloPendente);
-
+            string processado = processarLinha(linha, rotuloPendente);
             processado = processarConstante(processado);
-
             processado = processarCopy(processado);
 
             if (!processado.empty()) {
-
                 if (!secoesData.empty())
                     secoesData += "\n";
-
                 secoesData += processado;
             }
 
@@ -402,24 +335,16 @@ int main() {
         }
 
         linha = processarLinha(linha, rotuloPendente);
-
         linha = processarConstante(linha);
-
         linha = processarCopy(linha);
 
         if (linha.empty())
             continue;
 
         if (!validarLinha(linha)) {
-
             cerr << "Erro sintático na linha "
-                 << numeroLinha
-                 << ": "
-                 << linha
-                 << endl;
-
+                 << numeroLinha << ": " << linha << endl;
             erro = true;
-
             break;
         }
 
@@ -427,31 +352,22 @@ int main() {
             arquivoSaida << '\n';
 
         arquivoSaida << linha;
-
         primeiro = false;
     }
 
     arquivoEntrada.close();
 
     if (!erro && !secoesData.empty()) {
-
         arquivoSaida << "\nSECTION DATA\n";
-
         arquivoSaida << secoesData;
     }
 
     arquivoSaida.close();
 
     if (erro) {
-
-        remove("myfile.pre");
-
-        cerr << "Erro: Nao foi possivel criar corretamente o arquivo myfile.pre.\n";
-
-        return 1;
+        remove(saida.c_str());
+        cerr << "Erro ao gerar o arquivo preprocessado\n";
+    } else {
+        cout << "Preprocessamento concluido.\n";
     }
-
-    cout << "Preprocessamento concluído.\n";
-
-    return 0;
 }

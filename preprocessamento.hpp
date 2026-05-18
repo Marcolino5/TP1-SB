@@ -30,10 +30,12 @@ string processarConstante(const string &linha);
 string processarCopy(const string &linha);
 
 string processarLinha(
-    const string &linha,
+    const string linha,
     string &rotuloPendente
 );
 
 bool validarLinha(const string &linha);
+
+void preprocessar(const string &entrada);
 
 #endif

@@ -1,5 +1,4 @@
 #include "assembler.hpp"
-#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <cctype>
@@ -127,7 +126,7 @@ bool converteAInt(const string &s) {
     try {
         size_t pos;
         std::stoi(s, &pos);
-        return true;
+        return pos == s.size();
     } catch (...) {
         return false;
     }
@@ -151,30 +150,24 @@ int checaOperando (
     }
 }
 
-int main() {
-    ifstream arquivoEntrada("myfile.pre");
+int montar(const string &arquivo) {
+    ifstream arquivoEntrada(arquivo);
 
-    ofstream arquivoSaida1("myfile.obj");
-    ofstream arquivoSaida2("myfile.pen");
+    ofstream arquivoSaida1(arquivo.substr(0, arquivo.find_last_of('.')) + ".obj");
+    ofstream arquivoSaida2(arquivo.substr(0, arquivo.find_last_of('.')) + ".pen");
 
     if (!arquivoEntrada.is_open()) {
-
-        cerr << "Erro ao abrir myfile.pre\n";
-
+        cerr << "Erro ao abrir " << arquivo << "\n";
         return 1;
     }
 
     if (!arquivoSaida1.is_open()) {
-
-        cerr << "Erro ao criar myfile.obj\n";
-
+        cerr << "Erro ao criar " << arquivo.substr(0, arquivo.find_last_of('.')) + ".obj" << "\n";
         return 1;
     }
 
     if (!arquivoSaida2.is_open()) {
-
-        cerr << "Erro ao criar myfile.pen\n";
-
+        cerr << "Erro ao criar " << arquivo.substr(0, arquivo.find_last_of('.')) + ".pen" << "\n";
         return 1;
     }
 
@@ -212,14 +205,17 @@ int main() {
     while (getline(arquivoEntrada, linha)) {
         numeroLinha++;
 
-        if (linha == "SECTION DATA") continue;
-        if (linha == "SECTION TEXT") continue;
+        if (linha == "SECTION DATA") {
+            dados = true;
+            continue;}
+        if (linha == "SECTION TEXT") {
+            dados = false;
+            continue;
+        }
         if (linha.empty()) continue;
 
         LinhaParseada linhaParseada;
         linhaParseada = parsearLinha(linha);
-
-        cout << "linha foi parseada" << endl;
 
         if (!validarLinhaParseada(linhaParseada, tabelaInstrucoes)) {
 
@@ -233,10 +229,22 @@ int main() {
 
             break;
         }
-
-        cout << "linha foi validada sintaticamente" << endl;
         
         if (!linhaParseada.rotulo.empty()) {
+            if (dados) {
+                if (!validarRotuloData(linha)) {
+                    cerr << "Erro sintatico: rotulo com formato invalido na linha " << numeroLinha << "\n";
+                    erro = true;
+                    break;
+                }
+            } else {
+                if (!validarRotuloFormato(linha)) {
+                    cerr << "Erro sintatico: rotulo com formato invalido na linha " << numeroLinha << "\n";
+                    erro = true;
+                    break;
+                }
+            }
+
             if (tabelaSimbolos.count(linhaParseada.rotulo) && tabelaSimbolos[linhaParseada.rotulo].definido) {
                 cerr << "Erro semantico: rotulo " << linhaParseada.rotulo << " ja definido (linha " << numeroLinha << ")\n";
                 erro = true;
@@ -276,11 +284,18 @@ int main() {
                 codigoObj.push_back(opcode);
                 codigoPen.push_back(opcode);
 
+                
                 codigoObj.push_back(checaOperando(linhaParseada.operands[0], tabelaSimbolos, codigoObj.size()));
                 codigoPen.push_back(codigoObj.back());
                 break;
         }
         posicaoAtual += tabelaInstrucoes[linhaParseada.opcode].tamanho;
+    }
+    for (const auto &par : tabelaSimbolos) {
+        if (!par.second.definido) {
+            cerr << "Erro semantico: simbolo " << par.first << " indefinido\n";
+            erro = true;
+        }
     }
 
     for (int valor : codigoObj) {
@@ -293,4 +308,12 @@ int main() {
     arquivoEntrada.close();
     arquivoSaida1.close();
     arquivoSaida2.close();
+
+    if (erro) {
+        cerr << "Erro ao gerar o arquivo objeto\n";
+    } else {
+        cout << "Montagem concluida.\n";
+    }
+
+    return erro ? 1 : 0;
 }

@@ -39,4 +39,6 @@ int checaOperando(
     int enderecoAtual
 );
 
+int montar(const string &arquivo);
+
 #endif
