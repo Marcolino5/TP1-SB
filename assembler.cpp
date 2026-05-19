@@ -5,9 +5,6 @@
 #include <cstdio>
 #include <sstream>
 
-//analisador lexico sintatico e semantico
-//gerar codigo objeto e tabela de pendencias
-
 LinhaParseada parsearLinha(const string & linha) {
 
     LinhaParseada resultado;
