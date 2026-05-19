@@ -1,0 +1,32 @@
+SECTION DATA
+A: CONST 1
+
+
+SECTION TEXT
+LOAD A
+
+SECTION DATA
+B: CONST 2
+
+section text
+ADD B
+
+SECTION						DATA
+C: CONST 3
+
+section text
+SUB C
+
+MULT D
+SECTION DATA
+F: SPACE
+
+section text
+STORE E
+INPUT F             ; independe da entrada, retorna 0.
+OUTPUT E
+STOP
+
+SECTION DATA
+D: CONST 4
+E: SPACE

@@ -1,0 +1,16 @@
+section text
+INPUT N
+LOAD N
+FAT: SUB ONE
+JMPZ FIM
+STORE AUX
+MULT N
+STORE N
+LOAD AUX
+JMP FAT
+FIM: OUTPUT N                  ;  fatorial
+STOP
+section data
+AUX: SPACE
+N: SPACE
+ONE: CONST 1

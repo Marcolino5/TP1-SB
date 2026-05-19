@@ -1,0 +1,10 @@
+SECTION TEXT
+JMP START
+
+section data
+X: CONST 5
+
+section text
+START: LOAD X
+OUTPUT X
+STOP

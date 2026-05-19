@@ -1,0 +1,8 @@
+SECTION TEXT
+X: LOAD A
+X: STORE B
+STOP
+
+SECTION DATA
+A: const 1
+B: const 3
