@@ -125,7 +125,7 @@ bool validarRotuloData(const string &linha) {
 bool converteAInt(const string &s) {
     try {
         size_t pos;
-        std::stoi(s, &pos);
+        std::stoi(s, &pos, 0);
         return pos == s.size();
     } catch (...) {
         return false;
@@ -262,8 +262,18 @@ int montar(const string &arquivo) {
 
         if (linhaParseada.opcode.empty()) continue; // linha só tem rótulo
         int opcode = (tabelaInstrucoes[linhaParseada.opcode].opcode);
+        
+        if (opcode != -1 && !linhaParseada.operands.empty() && converteAInt(linhaParseada.operands[0])) {
+            cerr << "Erro semantico: operando com formato invalido na linha" << numeroLinha << "\n";
+            erro = true;
+        }
         switch (opcode) {
             case -1:
+                if (!converteAInt(linhaParseada.operands[0])) {
+                    cerr << "Erro semantico: operando com formato invalido na linha" << numeroLinha << "\n";
+                    erro = true;
+                    break;
+                }
                 codigoObj.push_back(std::stoi(linhaParseada.operands[0]));
                 codigoPen.push_back(std::stoi(linhaParseada.operands[0]));
                 break;
@@ -278,6 +288,11 @@ int montar(const string &arquivo) {
                 codigoObj.push_back(checaOperando(linhaParseada.operands[0], tabelaSimbolos, codigoObj.size()));
                 codigoPen.push_back(codigoObj.back());
                 
+                if (converteAInt(linhaParseada.operands[1])) {
+                    cerr << "Erro semantico: operando com formato invalido na linha" << numeroLinha << "\n";
+                    erro = true;
+                    break;
+                }
                 codigoObj.push_back(checaOperando(linhaParseada.operands[1], tabelaSimbolos, codigoObj.size()));
                 codigoPen.push_back(codigoObj.back());
                 break;
